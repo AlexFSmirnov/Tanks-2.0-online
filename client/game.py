@@ -9,28 +9,61 @@ def updateDisplaySurface():
     (disp_w, disp_h) = display_surface.get_size()    
     
     # If this condition is true, the field width will be sized 
-    # to the display width, and the gap between the field and
+    # to the display width, and the gaps between the field and
     # the window will be above and below the field.
     #
     # If it is not, the field will be sized to the display 
-    # height, and the gap will appear on the both sides 
+    # height, and the gaps will appear on the both sides 
     # of the display.
     if disp_h / (disp_w / 16) >= 9:
-        size = (disp_w, int(disp_w / 16 * 9))
-        coords = (0, (disp_h - size[1]) / 2)
-        gaps = "top and bottom"
+        size = (disp_w, round(disp_w / 16 * 9))
+        coords = (0, round((disp_h - size[1]) / 2))
     else:
-        size = (int(disp_h / 9 * 16), disp_h)
-        coords = ((disp_w - size[0]) / 2, 0)
-        gaps = "sides"
-    
-    # Now we need to add a gradient into the gaps, in order to 
-    # make them look more pretty.
-    grad = image.load("img/gui/grad.png")
-    
+        size = (round(disp_h / 9 * 16), disp_h)
+        coords = (round((disp_w - size[0]) / 2), 0) 
     
     display_surface.blit(background_surface, (0, 0))   
     display_surface.blit(transform.scale(field_surface, size), coords)
+
+def newBackground():
+    new_background = Surface(display_surface.get_size())
+    (disp_w, disp_h) = display_surface.get_size() 
+    
+    # We need to add a gradient into the gaps, in order to 
+    # make them look more pretty.
+    grad = image.load("img/gui/grad.png")
+    if disp_h / (disp_w / 16) >= 9:  # If the gaps are above and below the field
+        grad_size = (disp_w, round((disp_h - disp_w / 16 * 9) / 2))
+        grad_top = transform.scale(transform.rotate(grad, 90), grad_size)
+        grad_bottom = transform.scale(transform.rotate(grad, -90), grad_size)
+        
+        new_background.blit(grad_top, (0, 0))
+        new_background.blit(grad_bottom, (0, disp_h - grad_size[1]))
+        
+        # -1 here - sort of a duct tape. It works, and idk why :P
+        draw.line(new_background, (100, 100, 100),
+                  (0, grad_size[1] - 1), (disp_w, grad_size[1] - 1), 6)
+        draw.line(new_background, (100, 100, 100),
+                          (0, disp_h - grad_size[1] - 1), 
+                          (disp_w, disp_h - grad_size[1] - 1), 6) 
+    else:  # And if they are on the sides
+        grad_size = (round((disp_w - disp_h / 9 * 16) / 2), disp_h)
+        grad_left = transform.scale(transform.rotate(grad, 180), grad_size)
+        grad_right = transform.scale(grad, grad_size)
+        
+        new_background.blit(grad_left, (0, 0))
+        new_background.blit(grad_right, (disp_w - grad_size[0], 0))
+        
+        # -1 here - just the same duct tape.
+        draw.line(new_background, (100, 100, 100),
+                  (grad_size[0] - 1, 0), (grad_size[0] - 1, disp_h), 6)
+        draw.line(new_background, (100, 100, 100),
+                  (disp_w - grad_size[0] - 1, 0), 
+                  (disp_w - grad_size[0] - 1, disp_h), 6)
+    
+    return new_background
+        
+    
 
 
 #CONFIG------------------------------------------------------------------------#
@@ -68,7 +101,7 @@ while True:
             screen = display.set_mode(e.dict['size'],
                                              HWSURFACE|DOUBLEBUF|RESIZABLE)
             display_surface = transform.scale(display_surface, e.dict['size'])
-            background_surface = transform.scale(background_surface, screen.get_size())  # TODO: ..= newBackdround()
+            background_surface = newBackground()
             
         if e.type == KEYDOWN:
             if e.key == K_q:
