@@ -52,11 +52,8 @@ window = reswind.ResizableWindow((WIND_W_INIT, WIND_H_INIT),
                                  smoothscale=False)
 
 field_surface = Surface((MAIN_W, MAIN_H))
+field = [['v' for x in range(CELLS_W)] for y in range(CELLS_H)]
 
-
-
-pic = pygame.image.load("a.png")
-field_surface.blit(transform.scale(pic, (MAIN_W, MAIN_H)), (0, 0))
 
 clock = pygame.time.Clock()
 while True:
@@ -67,13 +64,12 @@ while True:
         sys.exit(0)      
     if e.type == VIDEORESIZE:
         window.updateSize(e.dict['size']) 
-        
+    
     if e.type == KEYDOWN:
-        if e.key == K_q:
-            field = [["d", "d", "d"],
-                     ["d", "g", "r"],
-                     ["d", "d", "d"]]
+        if e.key == K_u:
             drawField(field_surface, field)
+        
+    
     
     window.updateMainSurface(field_surface)
     window.update()
