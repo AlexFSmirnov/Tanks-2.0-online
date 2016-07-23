@@ -64,6 +64,14 @@ class Draw:
             if surface: drawCell(surface, cell_type, toPixel(toField((cx, cy))))
             cx += (x1 - x0) / max(dx, dy)
             cy += (y1 - y0) / max(dx, dy)
+    
+    def rect(cell_type, coords, surface=None, field=None):
+        x0, y0, x1, y1 = coords
+        Draw.line(cell_type, (x0, y0, x1, y0), surface=surface, field=field)
+        Draw.line(cell_type, (x1, y0, x1, y1), surface=surface, field=field)
+        Draw.line(cell_type, (x1, y1, x0, y1), surface=surface, field=field)
+        Draw.line(cell_type, (x0, y1, x0, y0), surface=surface, field=field)
+        
 
 
 # This functions convert coordinates from field-type to pixel-type and back 
@@ -154,10 +162,11 @@ while GAME_ON:
     mouse_buttons.update()
     keyboard_buttons.update()
     
-    if mouse_buttons.curr[1]:
+    if mouse_buttons.pressed[1]:
         current_cell = (current_cell + 1) % len(cell_types)
     
-    if mouse_buttons.curr[0] and not keyboard_buttons.both[K_LSHIFT]:
+    if mouse_buttons.curr[0] and not (keyboard_buttons.both[K_LSHIFT],
+                                      keyboard_buttons.both[K_LCTRL]):
         Draw.line(cell_types[current_cell], mouse_pos.both, field=field)
         
     if keyboard_buttons.curr[K_LSHIFT] and mouse_buttons.curr[0]:
@@ -170,6 +179,17 @@ while GAME_ON:
         Draw.line(cell_types[current_cell], (x0, y0, x1, y1), field=field)
         x0, y0 = (0, 0)
         p_surface.fill((0, 0, 0))
+    
+    if keyboard_buttons.curr[K_LCTRL] and mouse_buttons.curr[0]:
+        if not x0: x0, y0 = mouse_pos.curr
+        x1, y1 = mouse_pos.curr
+        p_surface.fill((0, 0, 0))
+        Draw.rect(cell_types[current_cell], (x0, y0, x1, y1), p_surface)
+    if keyboard_buttons.curr[K_LCTRL] and mouse_buttons.released[0]:
+        x1, y1 = mouse_pos.curr
+        Draw.rect(cell_types[current_cell], (x0, y0, x1, y1), field=field)
+        x0, y0 = (0, 0)
+        p_surface.fill((0, 0, 0))    
         
     
     drawField(field_surface, field)
