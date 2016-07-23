@@ -87,7 +87,21 @@ def drawField(surface, field):
     for i, line in enumerate(field):
         for j, cell in enumerate(line):
             x, y = toPixel((j, i))
-            drawCell(surface, cell, (x, y))       
+            drawCell(surface, cell, (x, y))   
+
+def saveField(field, path):
+    fout = open(path, 'w')
+    for line in field:
+        fout.write(''.join(line) + '\n')
+    fout.close()
+
+def loadField(path):
+    field = []
+    fin = open(path)
+    for line in fin.readlines():
+        field.append(list(line.strip())) 
+    fin.close()
+    return field
 
 def drawCell(surface, cell_type, coord):
     if cell_type not in cell_textures.keys(): cell_type = "v"
@@ -132,15 +146,27 @@ window = reswind.ResizableWindow((WIND_W_INIT, WIND_H_INIT),
                                  smoothscale=False)
 
 field_surface = Surface((MAIN_W, MAIN_H))
-field = [['v' for x in range(CELLS_W)] for y in range(CELLS_H)]
 
 cursor_surface = Surface((MAIN_W, MAIN_H))
 cursor_surface.fill((0, 0, 0))
 cursor_surface.set_colorkey((0, 0, 0))
-
 p_surface = Surface((MAIN_W, MAIN_H))
 p_surface.fill((0, 0, 0))
 p_surface.set_colorkey((0, 0, 0))
+
+load_path = "levels/blank.txt"
+save_path = "levels/new_level.txt"
+i = 0
+while i < len(sys.argv):
+    arg = sys.argv[i]
+    if arg in ("-l", "--load-path"):
+        i += 1
+        load_path = sys.argv[i]
+    if arg in ("-s", "--save-path"):
+        i += 1
+        save_path = sys.argv[i]
+    i += 1
+field = loadField(load_path)
 
 
 current_cell = 0
@@ -165,7 +191,7 @@ while GAME_ON:
     if mouse_buttons.pressed[1]:
         current_cell = (current_cell + 1) % len(cell_types)
     
-    if mouse_buttons.curr[0] and not (keyboard_buttons.both[K_LSHIFT],
+    if mouse_buttons.curr[0] and not (keyboard_buttons.both[K_LSHIFT] and
                                       keyboard_buttons.both[K_LCTRL]):
         Draw.line(cell_types[current_cell], mouse_pos.both, field=field)
         
@@ -190,6 +216,9 @@ while GAME_ON:
         Draw.rect(cell_types[current_cell], (x0, y0, x1, y1), field=field)
         x0, y0 = (0, 0)
         p_surface.fill((0, 0, 0))    
+    
+    if keyboard_buttons.curr[K_LCTRL] and keyboard_buttons.curr[K_s]:
+        saveField(field, save_path)
         
     
     drawField(field_surface, field)
