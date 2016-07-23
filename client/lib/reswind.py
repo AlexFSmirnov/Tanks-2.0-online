@@ -70,6 +70,22 @@ class ResizableWindow:
         else:
             scaled_main = transform.scale(self.main_surface, self.main_scale)
         self.display_surface.blit(scaled_main, self.main_pos)  
+    
+    def getMousePos(self):  # Sort of magic here.
+        x, y = mouse.get_pos()
+        d_w, d_h = self.display_surface.get_size()
+        m_w, m_h = self.main_size
+
+        if self.gaps_pos == "sides":
+            s_w, s_h = d_h / m_h * m_w, d_h  # The size of the scales main surf
+            x = (x - (d_w - s_w) // 2) * m_w // s_w  
+            y = y * m_h // s_h
+        elif self.gaps_pos == "above and below":
+            s_w, s_h = d_w, d_w / m_w * m_h
+            x = x * m_w // s_w
+            y = (y - (d_h - s_h) // 2) * m_h // s_h 
+
+        return (x, y)
         
     def updateGapsPos(self, new_size):
         d_w, d_h = new_size

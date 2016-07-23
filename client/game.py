@@ -5,6 +5,15 @@ from pygame import *
 from random import randint
 from lib import reswind
 
+    
+# This functions convert coordinates from field-type to pixel-type and back 
+#    EXAMPLE: (2, 1) -> (32, 16)
+def toPixel(x, y):
+    return (x * 16, y * 16)
+
+def toField(x, y):
+    return (x // 16, y // 16)
+#
 
 def drawField(surface, field):
     for i, line in enumerate(field):
@@ -15,16 +24,7 @@ def drawField(surface, field):
 def drawCell(surface, cell_type, x, y):
     if cell_type not in cell_textures.keys(): cell_type = "v"
     cell_img = image.load(cell_textures[cell_type])
-    surface.blit(cell_img, (x, y))
-    
-# This functions convert coordinates from field-type to pixel-type and back 
-#    EXAMPLE: (2, 1) -> (32, 16)
-def toPixel(x, y):
-    return (x * 16, y * 16)
-
-def toField(x, y):
-    return (x // 16, y // 16)
-    
+    surface.blit(cell_img, (x, y))    
 
 
 #CONFIG------------------------------------------------------------------------#
