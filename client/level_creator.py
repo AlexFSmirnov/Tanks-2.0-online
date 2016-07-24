@@ -50,11 +50,12 @@ class KeyboardButtons:
 
 class Draw:    
     def line(cell_type, coords, surface=None, field=None):
-        x0, y0, x1, y1 = coords
-        x0 = min(x0, MAIN_W - 1)
-        y0 = min(y0, MAIN_H - 1)
-        x1 = min(x1, MAIN_W - 1)
-        y1 = min(y1, MAIN_H - 1)        
+        x0, y0, x1, y1 = toField(coords)
+        x0 = min(max(x0, 0), CELLS_W - 1)
+        y0 = min(max(y0, 0), CELLS_H - 1)
+        x1 = min(max(x1, 0), CELLS_W - 1)
+        y1 = min(max(y1, 0), CELLS_H - 1)
+        x0, y0, x1, y1 = toPixel([x0, y0, x1, y1])
         if x0 == x1 and y0 == y1: 
             if field: 
                 tx, ty = toField([x0, y0])
@@ -118,16 +119,21 @@ def loadField(path):
     fin.close()
     return [floor_field, walls_field, ceil_field]
 
-def drawCell(surface, cell_type, coord):
+def drawCell(surface, cell_type, coords):
     if cell_type == "n": return
     if cell_type not in cells.keys(): cell_type = "v"
-    surface.blit(cells[cell_type]['img'], coord)
+    x, y = toField(coords)
+    x = min(max(x, 0), CELLS_W - 1)
+    y = min(max(y, 0), CELLS_H - 1)
+    coords = toPixel((x, y))
+    surface.blit(cells[cell_type]['img'], coords)
     
 def drawCursor():
     cursor_surface.fill((0, 0, 0))
-    cx, cy = toPixel(toField(window.getMousePos()))
-    cx = min(max(cx, 0), MAIN_W - 17)
-    cy = min(max(cy, 0), MAIN_H - 17)
+    cx, cy = toField(window.getMousePos())
+    cx = min(max(cx, 0), CELLS_W)
+    cy = min(max(cy, 0), CELLS_H)
+    cx, cy = toPixel((cx, cy))
     draw.rect(cursor_surface, (255, 0, 0), (cx - 1, cy - 1, 17, 17), 6)
     drawCell(cursor_surface, cellFromIdx(current_cell), (cx, cy))
 
@@ -161,10 +167,6 @@ window = reswind.ResizableWindow((WIND_W_INIT, WIND_H_INIT),
                                  smoothscale=False)
 
 field_surface = Surface((MAIN_W, MAIN_H))
-floor_surface = Surface((MAIN_W, MAIN_H))
-walls_surface = Surface((MAIN_W, MAIN_H))
-ceil_surface  = Surface((MAIN_W, MAIN_H))
-field_surfaces = [floor_surface, walls_surface, ceil_surface]
 
 cursor_surface = Surface((MAIN_W, MAIN_H))
 cursor_surface.fill((0, 0, 0))
