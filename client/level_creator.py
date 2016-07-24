@@ -1,6 +1,7 @@
 import pygame
 import sys
 import configparser
+import json
 from pygame import *
 from random import randint
 from lib import reswind
@@ -55,12 +56,16 @@ class Draw:
         x1 = min(x1, MAIN_W - 1)
         y1 = min(y1, MAIN_H - 1)        
         if x0 == x1 and y0 == y1: 
-            if field: field[toField([y0])[0]][toField([x0])[0]] = cell_type
+            if field: 
+                tx, ty = toField([x0, y0])
+                field[current_layer - 1][ty][tx] = cell_type
             if surface: drawCell(surface, cell_type, toPixel(toField((x0, y0))))
         cx, cy = x0, y0
         dx, dy = abs(x0 - x1), abs(y0 - y1)
         while abs(cx - x1) > 1 or abs(cy - y1) > 1:
-            if field: field[toField([cy])[0]][toField([cx])[0]] = cell_type
+            if field: 
+                tx, ty = toField([cx, cy])
+                field[current_layer - 1][ty][tx] = cell_type
             if surface: drawCell(surface, cell_type, toPixel(toField((cx, cy))))
             cx += (x1 - x0) / max(dx, dy)
             cy += (y1 - y0) / max(dx, dy)
@@ -84,29 +89,39 @@ def toField(coords):
 #
 
 def drawField(surface, field):
-    for i, line in enumerate(field):
-        for j, cell in enumerate(line):
+    for i in range(CELLS_H):
+        for j in range(CELLS_W):
             x, y = toPixel((j, i))
-            drawCell(surface, cell, (x, y))   
+            if current_layer >= 1: drawCell(surface, field[0][i][j], (x, y))   
+            if current_layer >= 2: drawCell(surface, field[1][i][j], (x, y))   
+            if current_layer >= 3: drawCell(surface, field[2][i][j], (x, y))   
 
 def saveField(field, path):
-    fout = open(path, 'w')
-    for line in field:
-        fout.write(''.join(line) + '\n')
+    fout = open('levels/' + path, 'w')
+    for layer in field:
+        for line in layer:
+            fout.write(''.join(line) + '\n')
     fout.close()
 
 def loadField(path):
-    field = []
-    fin = open(path)
-    for line in fin.readlines():
-        field.append(list(line.strip())) 
+    floor_field = []
+    walls_field = []
+    ceil_field = []
+    fin = open('levels/' + path)
+    for i, line in enumerate(fin.readlines()):
+        if i < CELLS_H:
+            floor_field.append(list(line.strip())) 
+        elif i < 2 * CELLS_H:
+            walls_field.append(list(line.strip())) 
+        else:
+            ceil_field.append(list(line.strip())) 
     fin.close()
-    return field
+    return [floor_field, walls_field, ceil_field]
 
 def drawCell(surface, cell_type, coord):
-    if cell_type not in cell_textures.keys(): cell_type = "v"
-    cell_img = cells[cell_type]
-    surface.blit(cell_img, coord)
+    if cell_type == "n": return
+    if cell_type not in cells.keys(): cell_type = "v"
+    surface.blit(cells[cell_type]['img'], coord)
     
 def drawCursor():
     cursor_surface.fill((0, 0, 0))
@@ -114,7 +129,10 @@ def drawCursor():
     cx = min(max(cx, 0), MAIN_W - 17)
     cy = min(max(cy, 0), MAIN_H - 17)
     draw.rect(cursor_surface, (255, 0, 0), (cx - 1, cy - 1, 17, 17), 6)
-    drawCell(cursor_surface, cell_types[current_cell], (cx, cy))
+    drawCell(cursor_surface, cellFromIdx(current_cell), (cx, cy))
+
+def cellFromIdx(idx):
+    return sorted(list(cells.keys()))[idx]
 
 
 #CONFIG------------------------------------------------------------------------#
@@ -130,13 +148,10 @@ MAIN_H = int(config['DISPLAY SIZE']['MAIN_H'])
 CELLS_W = int(config['DISPLAY SIZE']['CELLS_W'])
 CELLS_H = int(config['DISPLAY SIZE']['CELLS_H'])
 
-cell_textures = {}
-cell_types = []
 cells = {}
 for key in config.options('CELL TEXTURES'):
-    cell_textures[key] = config['CELL TEXTURES'][key]
-    cells[key] = image.load(cell_textures[key])
-    cell_types.append(key)
+    cells[key] = json.loads(config['CELL TEXTURES'][key])
+    cells[key]['img'] = image.load(cells[key]['texture'])
 #-----#
 
 pygame.init()
@@ -146,6 +161,10 @@ window = reswind.ResizableWindow((WIND_W_INIT, WIND_H_INIT),
                                  smoothscale=False)
 
 field_surface = Surface((MAIN_W, MAIN_H))
+floor_surface = Surface((MAIN_W, MAIN_H))
+walls_surface = Surface((MAIN_W, MAIN_H))
+ceil_surface  = Surface((MAIN_W, MAIN_H))
+field_surfaces = [floor_surface, walls_surface, ceil_surface]
 
 cursor_surface = Surface((MAIN_W, MAIN_H))
 cursor_surface.fill((0, 0, 0))
@@ -154,8 +173,8 @@ p_surface = Surface((MAIN_W, MAIN_H))
 p_surface.fill((0, 0, 0))
 p_surface.set_colorkey((0, 0, 0))
 
-load_path = "levels/blank.txt"
-save_path = "levels/new_level.txt"
+load_path = "blank.txt"
+save_path = "new_level.txt"
 i = 0
 while i < len(sys.argv):
     arg = sys.argv[i]
@@ -170,6 +189,7 @@ field = loadField(load_path)
 
 
 current_cell = 0
+current_layer = 1
 mouse_pos = MousePos()
 mouse_buttons = MouseButtons()
 keyboard_buttons = KeyboardButtons()
@@ -188,21 +208,25 @@ while GAME_ON:
     mouse_buttons.update()
     keyboard_buttons.update()
     
+    if keyboard_buttons.pressed[K_1]: current_layer = 1
+    if keyboard_buttons.pressed[K_2]: current_layer = 2
+    if keyboard_buttons.pressed[K_3]: current_layer = 3
+    
     if mouse_buttons.pressed[1]:
-        current_cell = (current_cell + 1) % len(cell_types)
+        current_cell = (current_cell + 1) % len(cells.keys())
     
     if mouse_buttons.curr[0] and not (keyboard_buttons.both[K_LSHIFT] or
                                       keyboard_buttons.both[K_LCTRL]):
-        Draw.line(cell_types[current_cell], mouse_pos.both, field=field)
+        Draw.line(cellFromIdx(current_cell), mouse_pos.both, field=field)
         
     if keyboard_buttons.curr[K_LSHIFT] and mouse_buttons.curr[0]:
         if not x0: x0, y0 = mouse_pos.curr
         x1, y1 = mouse_pos.curr
         p_surface.fill((0, 0, 0))
-        Draw.line(cell_types[current_cell], (x0, y0, x1, y1), p_surface)
+        Draw.line(cellFromIdx(current_cell), (x0, y0, x1, y1), p_surface)
     if keyboard_buttons.curr[K_LSHIFT] and mouse_buttons.released[0]:
         x1, y1 = mouse_pos.curr
-        Draw.line(cell_types[current_cell], (x0, y0, x1, y1), field=field)
+        Draw.line(cellFromIdx(current_cell), (x0, y0, x1, y1), field=field)
         x0, y0 = (0, 0)
         p_surface.fill((0, 0, 0))
     
@@ -210,10 +234,10 @@ while GAME_ON:
         if not x0: x0, y0 = mouse_pos.curr
         x1, y1 = mouse_pos.curr
         p_surface.fill((0, 0, 0))
-        Draw.rect(cell_types[current_cell], (x0, y0, x1, y1), p_surface)
+        Draw.rect(cellFromIdx(current_cell), (x0, y0, x1, y1), p_surface)
     if keyboard_buttons.curr[K_LCTRL] and mouse_buttons.released[0]:
         x1, y1 = mouse_pos.curr
-        Draw.rect(cell_types[current_cell], (x0, y0, x1, y1), field=field)
+        Draw.rect(cellFromIdx(current_cell), (x0, y0, x1, y1), field=field)
         x0, y0 = (0, 0)
         p_surface.fill((0, 0, 0))    
     
