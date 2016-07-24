@@ -171,9 +171,11 @@ field_surface = Surface((MAIN_W, MAIN_H))
 cursor_surface = Surface((MAIN_W, MAIN_H))
 cursor_surface.fill((0, 0, 0))
 cursor_surface.set_colorkey((0, 0, 0))
+cursor_surface.set_alpha(150)
 p_surface = Surface((MAIN_W, MAIN_H))
 p_surface.fill((0, 0, 0))
 p_surface.set_colorkey((0, 0, 0))
+p_surface.set_alpha(150)
 
 load_path = "blank.txt"
 save_path = "new_level.txt"
@@ -201,7 +203,7 @@ clock = pygame.time.Clock()
 GAME_ON = True
 while GAME_ON:
     clock.tick(30)
-    e = pygame.event.wait()
+    e = pygame.event.poll()
     if e.type == QUIT: 
         GAME_ON = False   
     if e.type == VIDEORESIZE:
