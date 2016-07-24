@@ -191,7 +191,7 @@ while GAME_ON:
     if mouse_buttons.pressed[1]:
         current_cell = (current_cell + 1) % len(cell_types)
     
-    if mouse_buttons.curr[0] and not (keyboard_buttons.both[K_LSHIFT] and
+    if mouse_buttons.curr[0] and not (keyboard_buttons.both[K_LSHIFT] or
                                       keyboard_buttons.both[K_LCTRL]):
         Draw.line(cell_types[current_cell], mouse_pos.both, field=field)
         
