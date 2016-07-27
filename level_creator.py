@@ -4,7 +4,7 @@ import configparser
 import json
 from pygame import *
 from random import randint
-from lib import reswind
+from client_files import reswind
 
 
 class MousePos:
@@ -98,7 +98,7 @@ def drawField(surface, field):
             if current_layer >= 3: drawCell(surface, field[2][i][j], (x, y))   
 
 def saveField(field, path):
-    fout = open('levels/' + path, 'w')
+    fout = open('server_files/levels/' + path, 'w')
     for layer in field:
         for line in layer:
             fout.write(''.join(line) + '\n')
@@ -108,7 +108,7 @@ def loadField(path):
     floor_field = []
     walls_field = []
     ceil_field = []
-    fin = open('levels/' + path)
+    fin = open('server_files/levels/' + path)
     for i, line in enumerate(fin.readlines()):
         if i < CELLS_H:
             floor_field.append(list(line.strip())) 
@@ -143,7 +143,7 @@ def cellFromIdx(idx):
 
 #CONFIG------------------------------------------------------------------------#
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read('client_files/config.ini')
 
 WIND_W_INIT = int(config['DISPLAY SIZE']['WIND_W_INIT'])
 WIND_H_INIT = int(config['DISPLAY SIZE']['WIND_H_INIT'])
@@ -157,7 +157,7 @@ CELLS_H = int(config['DISPLAY SIZE']['CELLS_H'])
 cells = {}
 for key in config.options('CELL TEXTURES'):
     cells[key] = json.loads(config['CELL TEXTURES'][key])
-    cells[key]['img'] = image.load(cells[key]['texture'])
+    cells[key]['img'] = image.load('client_files/' + cells[key]['texture'])
 #-----#
 
 pygame.init()
